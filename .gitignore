@@ -1,0 +1,25 @@
+# Віртуальне середовище Python
+venv/
+.venv/
+env/
+
+# Клоака й кеш Python (байт-код)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Кеш інструментів перевірки коду (Ruff, Pytest, Mypy)
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# Бази даних (SQLite) та чутливі конфігурації
+*.db
+*.sqlite3
+synclone.db
+.env
+
+# Службові файли IDE та операційної системи
+.vscode/
+.idea/
+.DS_Store
