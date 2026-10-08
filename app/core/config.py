@@ -22,5 +22,16 @@ class Settings(BaseSettings):
 
     debug: bool = True
 
+    # --- JWT (авторизація API) ---
+    # Секрет має бути >= 32 байтів (вимога HMAC-SHA256, RFC 7518);
+    # у проді обов'язково перевизначається у .env.
+    jwt_secret: str = "dev-secret-change-me-32-bytes-minimum!!"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 30
+
+    # --- Адміністратор (сідиться при старті, без публічної реєстрації) ---
+    admin_email: str = "admin@synclone.local"
+    admin_password: str = "admin12345"
+
 
 settings = Settings()

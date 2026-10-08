@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Synclone — синхронізатор пам'яті для клонів</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Synclone</a>
+    <div id="nav-box">
+      <a href="/login.html">Увійти</a>
+      <a href="/register.html">Реєстрація</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Synclone</h1>
+      <p>
+        Data-Intensive Application для безперервного потоку бекапів свідомості
+        мільйонів клонів: високі потоки даних, кешування, балансування та
+        розділені ролі доступу.
+      </p>
+      <a class="btn" href="/login.html">Увійти</a>
+      <a class="btn btn-ghost" href="/register.html">Створити акаунт</a>
+      <div id="cabinet-box"></div>
+    </section>
+
+    <section class="features">
+      <div class="card">
+        <h3>Прийом потоку</h3>
+        <p class="muted">Реєстрація бекапів пам'яті з перевіркою хеша та дедуплікацією.</p>
+      </div>
+      <div class="card">
+        <h3>Кеш і балансування</h3>
+        <p class="muted">Redis-кеш метаданих і черга обробки, Nginx між воркерами.</p>
+      </div>
+      <div class="card">
+        <h3>Ролі та безпека</h3>
+        <p class="muted">JWT-авторизація, ролі admin/user, захист від IDOR.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/app.js"></script>
+  <script>
+    // Якщо вже залогінений — пропонуємо кабінет
+    (async () => {
+      const user = await currentUser();
+      if (user) {
+        document.getElementById("nav-box").innerHTML =
+          '<a href="/home.html">Особистий кабінет</a>' +
+          (user.role === "admin" ? ' <a href="/admin.html">Адмін-панель</a>' : "") +
+          ' <button class="btn-link" onclick="logout()">Вихід</button>';
+        document.getElementById("cabinet-box").innerHTML =
+          '<p><a href="/home.html">Перейти до кабінету →</a></p>';
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Вхід — Synclone</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Synclone</a>
+    <div><a href="/register.html">Реєстрація</a></div>
+  </header>
+
+  <main class="container">
+    <section class="card" style="max-width: 420px; margin: 48px auto;">
+      <h1>Вхід</h1>
+      <form id="login-form" class="form">
+        <label>Email
+          <input type="email" id="email" required autocomplete="username">
+        </label>
+        <label>Пароль
+          <input type="password" id="password" required autocomplete="current-password">
+        </label>
+        <button class="btn" type="submit">Увійти</button>
+        <p id="error" class="error" hidden></p>
+      </form>
+      <p class="muted">Немає акаунта? <a href="/register.html">Зареєструватись</a></p>
+    </section>
+  </main>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.getElementById("login-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const errorBox = document.getElementById("error");
+      errorBox.hidden = true;
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: document.getElementById("email").value,
+          password: document.getElementById("password").value,
+        }),
+      });
+      if (!response.ok) {
+        errorBox.textContent = "Невірний email або пароль (401)";
+        errorBox.hidden = false;
+        return;
+      }
+      const data = await response.json();
+      setToken(data.access_token);
+      const user = await currentUser();
+      window.location.href = user && user.role === "admin" ? "/admin.html" : "/home.html";
+    });
+  </script>
+</body>
+</html>

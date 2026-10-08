@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Адмін-панель — Synclone</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Synclone</a>
+    <div id="user-box"></div>
+  </header>
+
+  <main class="container">
+    <h1>Адмін-панель</h1>
+    <p class="muted">Доступ лише для ролі admin (сервер повертає 403 для інших).</p>
+
+    <section id="forbidden" class="card" hidden>
+      <h2 class="error">403 Доступ заборонено</h2>
+      <p class="muted">Ця сторінка призначена адміністраторам.</p>
+      <a class="btn btn-ghost" href="/home.html">На головну</a>
+    </section>
+
+    <section id="panel" hidden>
+      <section class="stats" id="stats"></section>
+
+      <section class="card">
+        <h2>Користувачі</h2>
+        <table>
+          <thead>
+            <tr><th>#</th><th>Email</th><th>Роль</th><th>Статус</th><th></th></tr>
+          </thead>
+          <tbody id="user-rows"></tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h2>Усі бекапи системи</h2>
+        <table>
+          <thead>
+            <tr><th>#</th><th>Користувач</th><th>Клон</th><th>МБ</th><th>Створено</th></tr>
+          </thead>
+          <tbody id="backup-rows"></tbody>
+        </table>
+        <p class="muted" id="empty" hidden>Бекапів ще немає.</p>
+      </section>
+    </section>
+  </main>
+
+  <script src="/js/app.js"></script>
+  <script>
+    async function loadStats() {
+      const response = await api("/api/admin/stats");
+      const stats = await response.json();
+      document.getElementById("stats").innerHTML =
+        '<div class="stat"><div class="value">' + stats.users +
+        '</div><div class="label">користувачів</div></div>' +
+        '<div class="stat"><div class="value">' + stats.backups +
+        '</div><div class="label">бекапів</div></div>' +
+        '<div class="stat"><div class="value">' + stats.total_size_mb +
+        '</div><div class="label">МБ усього</div></div>';
+    }
+
+    async function loadUsers() {
+      const response = await api("/api/admin/users");
+      const users = await response.json();
+      document.getElementById("user-rows").innerHTML = users.map((u) =>
+        "<tr><td>" + u.id + "</td><td>" + u.email + "</td><td>" +
+        (u.role === "admin"
+          ? '<span class="badge badge-admin">admin</span>'
+          : '<span class="badge">user</span>') +
+        "</td><td>" + (u.is_active ? "активний" : "деактивований") +
+        '</td><td><button class="btn btn-small" data-id="' + u.id +
+        '" data-active="' + u.is_active + '">' +
+        (u.is_active ? "Деактивувати" : "Активувати") +
+        "</button></td></tr>"
+      ).join("");
+      document.querySelectorAll("#user-rows button[data-id]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          await api("/api/admin/users/" + btn.dataset.id, {
+            method: "PATCH",
+            body: JSON.stringify({ is_active: btn.dataset.active !== "true" }),
+          });
+          await loadUsers();
+        });
+      });
+    }
+
+    async function loadBackups() {
+      const [backupsResp, usersResp] = await Promise.all([
+        api("/api/admin/backups"),
+        api("/api/admin/users"),
+      ]);
+      const backups = await backupsResp.json();
+      const users = await usersResp.json();
+      const names = {};
+      users.forEach((u) => { names[u.id] = u.email; });
+      document.getElementById("empty").hidden = backups.length !== 0;
+      document.getElementById("backup-rows").innerHTML = backups.map((b) =>
+        "<tr><td>" + b.id + "</td><td>" + (names[b.user_id] || b.user_id) +
+        "</td><td>" + b.clone_id + "</td><td>" + b.size_mb + "</td><td>" +
+        new Date(b.created_at).toLocaleString("uk-UA") + "</td></tr>"
+      ).join("");
+    }
+
+    (async () => {
+      const me = await requireUser();
+      if (!me) {
+        return;
+      }
+      renderUserHeader(me);
+      if (me.role !== "admin") {
+        // Клієнтський UX; сервер все одно відповість 403 на API-запити
+        document.getElementById("forbidden").hidden = false;
+        return;
+      }
+      document.getElementById("panel").hidden = false;
+      await Promise.all([loadStats(), loadUsers(), loadBackups()]);
+    })();
+  </script>
+</body>
+</html>
