@@ -1,14 +1,19 @@
 from fastapi import FastAPI
 
+from app.core.config import settings
 from app.core.database import Base, engine
+
+# Імпорт моделей реєструє їх у Base.metadata — без цього create_all
+# не створить таблиці моделей.
+from app.models import MemoryBackup  # noqa: F401
 
 # Створення таблиць у БД під час запуску
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Synclone API",
+    title=settings.app_name,
     description="Синхронізатор пам'яті для клонів (Data-Intensive Application)",
-    version="0.1.0",
+    version=settings.app_version,
 )
 
 
