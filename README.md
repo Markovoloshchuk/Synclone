@@ -88,6 +88,24 @@ Synclone/
 
 ## 4. Запуск проєкту
 
+### 4.1. База даних PostgreSQL (Docker)
+
+Контейнер сам створює користувача та базу — ручні SQL-команди не потрібні:
+
+```bash
+docker run -d --name synclone-pg \
+  -e POSTGRES_USER=synclone \
+  -e POSTGRES_PASSWORD=password \
+  -e POSTGRES_DB=synclone \
+  -p 5432:5432 \
+  --restart unless-stopped \
+  postgres:16
+```
+
+Перевірка готовності: `docker exec synclone-pg pg_isready -U synclone`
+
+### 4.2. Запуск застосунку
+
 ```bash
 # 1. Віртуальне середовище
 python3 -m venv venv
@@ -96,8 +114,8 @@ source venv/bin/activate
 # 2. Залежності
 pip install -r requirements.txt
 
-# 3. (опційно) власні налаштування
-cp .env.example .env   # за потреби змініть DATABASE_URL
+# 3. Налаштування підключення
+cp .env.example .env   # DATABASE_URL уже вказує на контейнер synclone-pg
 
 # 4. Запуск
 uvicorn app.main:app --reload
@@ -106,9 +124,9 @@ uvicorn app.main:app --reload
 - Swagger-документація: <http://127.0.0.1:8000/docs>
 - Health-check: <http://127.0.0.1:8000/health>
 
-За замовчуванням використовується локальний **SQLite** (`synclone.db`) — це каркас
-для швидкого старту; для продакшену в `.env` перемикається `DATABASE_URL` на
-**PostgreSQL** (див. [docs/architecture.md](docs/architecture.md)).
+Без файлу `.env` застосунок використовує локальний **SQLite** (`synclone.db`) як
+fallback для швидкого старту; основний режим роботи — **PostgreSQL** із
+Docker-контейнера `synclone-pg` (див. [docs/architecture.md](docs/architecture.md)).
 
 ---
 
