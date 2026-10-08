@@ -123,10 +123,10 @@ sequenceDiagram
 | Кеш / черга | Redis              | ще не підключено (етапи далі) | налаштування `REDIS_URL`           |
 | Балансування| Nginx              | uvicorn (один процес)       | docker-compose / конфіг Nginx        |
 
-Драйвер `psycopg2-binary` додається до `requirements.txt` при переході на
-PostgreSQL. Конфігурація вже уніфікована: `app/core/config.py` читає
-`DATABASE_URL` з `.env`, тому зміна одного рядка перемикає застосунок на
-PostgreSQL без зміни коду.
+Драйвер `psycopg2-binary` уже встановлено та додано до `requirements.txt`.
+Конфігурація уніфікована: `app/core/config.py` читає `DATABASE_URL` з `.env`,
+тому після запуску сервера PostgreSQL зміна одного рядка перемикає застосунок
+на нього без зміни коду.
 
 ## 8. Обґрунтування технологій
 
