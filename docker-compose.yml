@@ -5,28 +5,47 @@ services:
     image: postgres:15-alpine
     container_name: synclone_db
     environment:
-      POSTGRES_USER: postgres_admin
-      POSTGRES_PASSWORD: password123
-      POSTGRES_DB: synclone_db
+      POSTGRES_USER: ${POSTGRES_USER:-synclone}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-db-password}
+      POSTGRES_DB: ${POSTGRES_DB:-synclone}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
 
-  web:
+  api:
+    container_name: synclone_api
     build: .
-    container_name: synclone_web
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    volumes:
-      - .:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/synclone_db
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://synclone:change-this-db-password@db:5432/synclone}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-unsafe-development-secret-change-me}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-60}
+      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-admin@example.com}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-change-this-admin-password}
+      INITIAL_ADMIN_NAME: ${INITIAL_ADMIN_NAME:-Synclone Administrator}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000}
     depends_on:
-      - db
-    restart: always
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    container_name: synclone_frontend
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    restart: unless-stopped
 
 volumes:
   postgres_data:
