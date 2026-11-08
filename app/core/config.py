@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Clone Memory Synchronizer"
     DATABASE_URL: str
     DEBUG: bool = False
+    JWT_SECRET_KEY: str
+    JWT_EXPIRE_MINUTES: int = 60
 
     @model_validator(mode="after")
     def validate_production_settings(self):

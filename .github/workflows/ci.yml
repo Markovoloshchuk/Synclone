@@ -20,6 +20,8 @@ jobs:
       PROJECT_NAME: Clone Memory Synchronizer
       DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/test_db
       DEBUG: "false"
+      JWT_SECRET_KEY: ci-only-secret-not-for-production
+      JWT_EXPIRE_MINUTES: "60"
 
     steps:
       - name: Checkout repository

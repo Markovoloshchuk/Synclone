@@ -3,6 +3,8 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from app.api.v1.admin import router as admin_router
+from app.api.v1.auth import router as auth_router
 from app.api.v1.endpoints import router as clone_router
 from app.core.config import settings
 
@@ -20,6 +22,10 @@ app = FastAPI(
     redoc_url="/redoc" if is_sandbox else None,
     openapi_url="/openapi.json" if is_sandbox else None,
 )
+
+app.include_router(auth_router)
+app.include_router(admin_router)
+app.include_router(clone_router)
 
 
 # Обробка неочікуваних помилок сервера.
