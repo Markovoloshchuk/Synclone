@@ -1,25 +1,30 @@
+import os
+from typing import Literal
+
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Визначаємо середовище, для якого потрібно прочитати конфігурацію.
+CURRENT_ENV = os.getenv("APP_ENV", "sandbox")
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Synclone"
-    DATABASE_URL: str = (
-        "postgresql+asyncpg://synclone:change-this-db-password@localhost:5432/synclone"
+    model_config = SettingsConfigDict(
+        env_file=f".env.{CURRENT_ENV}",
+        env_file_encoding="utf-8",
+        extra="ignore",
     )
-    JWT_SECRET_KEY: str = "unsafe-development-secret-change-me"
-    JWT_EXPIRE_MINUTES: int = 60
-    INITIAL_ADMIN_EMAIL: str = "admin@example.com"
-    INITIAL_ADMIN_PASSWORD: str = "change-this-admin-password"
-    INITIAL_ADMIN_NAME: str = "Synclone Administrator"
-    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    APP_ENV: Literal["sandbox", "production"] = "sandbox"
+    PROJECT_NAME: str = "Clone Memory Synchronizer"
+    DATABASE_URL: str
+    DEBUG: bool = False
 
-    @property
-    def cors_origins(self) -> list[str]:
-        return [
-            origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()
-        ]
+    @model_validator(mode="after")
+    def validate_production_settings(self):
+        if self.APP_ENV == "production" and self.DEBUG:
+            raise ValueError("DEBUG must be False in Production environment")
+        return self
 
 
 settings = Settings()

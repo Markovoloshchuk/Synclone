@@ -68,3 +68,89 @@ uvicorn app.main:app --reload
 - Таблиці створюються на старті через `Base.metadata.create_all` для простоти навчального проєкту. Для production слід додати Alembic-міграції.
 - Потрібно налаштувати rate limiting для входу/реєстрації, політику паролів, аудит дій адміністратора, резервування БД і повноцінні інтеграційні тести перед production.
 - Frontend очікує API на `http://localhost:8000`; для іншого розміщення задай `VITE_API_URL` під час збірки frontend.
+
+## Розділення середовищ
+
+Проєкт підтримує два незалежних середовища:
+
+- Sandbox — середовище для розробки та тестування.
+- Production — робоче середовище.
+
+Для кожного середовища використовується окремий файл конфігурації
+та окрема база даних PostgreSQL.
+
+### Sandbox
+
+Створи файл `.env.sandbox` на основі шаблону
+`.env.sandbox.example`.
+
+Запуск:
+
+```bash
+docker compose -p synclone-sandbox \
+  -f docker-compose.yml up --build
+```
+
+API документація:
+http://localhost:8000/docs
+
+PostgreSQL доступний на порту 5433.
+
+Зупинка:
+
+```bash
+docker compose -p synclone-sandbox \
+  -f docker-compose.yml down
+```
+
+### Production
+
+Створи `.env.production` на основі
+`.env.production.example`.
+
+Перед запуском встанови власний надійний пароль PostgreSQL
+у змінних POSTGRES_PASSWORD та DATABASE_URL.
+
+Запуск:
+
+```bash
+docker compose -p synclone-production \
+  -f docker-compose.production.yml up --build -d
+```
+
+API:
+http://localhost:8001/
+
+Swagger та ReDoc у Production вимкнені.
+
+Зупинка:
+
+```bash
+docker compose -p synclone-production \
+  -f docker-compose.production.yml down
+```
+
+### Безпека
+
+- Паролі не зберігаються у вихідному коді.
+- Файли `.env.sandbox` та `.env.production`
+  не додаються до Git.
+- У Production DEBUG=False.
+- Внутрішні помилки сервера не розкриваються користувачу.
+- Production та Sandbox мають незалежні бази даних
+  і Docker volumes.
+
+## CI/CD
+
+У проєкті використовується GitHub Actions.
+
+Workflow знаходиться в `.github/workflows/ci.yml`.
+
+Він запускається автоматично при:
+- Push у гілку main.
+- Створенні Pull Request у main.
+
+Під час виконання перевіряється:
+- Якість коду за допомогою Ruff.
+- Форматування за допомогою Black.
+- Коректність роботи тестів за допомогою pytest.
