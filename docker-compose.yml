@@ -1,32 +1,38 @@
-version: '3.8'
 
 services:
   db:
     image: postgres:15-alpine
-    container_name: synclone_db
-    environment:
-      POSTGRES_USER: postgres_admin
-      POSTGRES_PASSWORD: password123
-      POSTGRES_DB: synclone_db
+    env_file:
+      - .env.sandbox
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: always
+      - sandbox_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   web:
     build: .
-    container_name: synclone_web
+    env_file:
+      - .env.sandbox
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - .:/app
     ports:
       - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/synclone_db
     depends_on:
-      - db
-    restart: always
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
-  postgres_data:
+  sandbox_postgres_data:
+    name: synclone_sandbox_postgres_data
