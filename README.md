@@ -7,7 +7,6 @@
 - Реєстрація користувача через email і пароль.
 - Вхід із видачею JWT access token.
 - Ролі `admin` і `user`; публічна реєстрація завжди створює роль `user`.
-- Початковий адміністратор створюється при першому запуску API зі змінних `INITIAL_ADMIN_*`.
 - Адміністратор переглядає користувачів, змінює ролі та активність.
 - Користувач бачить і створює лише власні записи резервних копій.
 - Окремий React frontend: `http://localhost:5173`.
@@ -15,21 +14,31 @@
 
 > Поточна реалізація зберігає метадані й хеш, а не сам файл/вміст резервної копії. Статус `synced` означає, що запис прийнято API, а не те, що вміст перевірено або відновлено.
 
-## Запуск через Docker
+## Запуск застосунку
 
-1. Скопіюй `.env.example` у `.env`.
-2. Заміни `POSTGRES_PASSWORD`, `DATABASE_URL` (пароль у URI має відповідати `POSTGRES_PASSWORD`), `JWT_SECRET_KEY` на випадковий секрет і `INITIAL_ADMIN_PASSWORD` на унікальний пароль довжиною щонайменше 12 символів.
-3. Запусти:
+Backend та PostgreSQL запускаються через Docker Compose. Інструкції для тестового та робочого середовищ наведені нижче в розділі «Розділення середовищ».
 
-   ```bash
-   docker compose up --build
-   ```
+Frontend запускається окремо, оскільки він не входить до поточних Docker Compose конфігурацій.
 
-4. Відкрий frontend: http://localhost:5173
-5. Увійди з `INITIAL_ADMIN_EMAIL` і `INITIAL_ADMIN_PASSWORD`.
-6. Створи звичайного користувача через форму реєстрації.
+Після запуску Backend відкрий новий термінал:
 
-Приклад генерації секрету JWT у Linux/macOS:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend буде доступний за адресою:
+
+http://localhost:5173
+
+За замовчуванням Frontend підключається до Sandbox API:
+
+http://localhost:8000
+
+Для підключення до Production API використовуй змінну `VITE_API_URL` зі значенням `http://localhost:8001` під час запуску або збірки Frontend.
+
+Для генерації секретного ключа JWT у Linux/macOS використовуй:
 
 ```bash
 openssl rand -hex 32
@@ -81,10 +90,20 @@ uvicorn app.main:app --reload
 
 ### Sandbox
 
-Створи файл `.env.sandbox` на основі шаблону
-`.env.sandbox.example`.
+Sandbox використовується для розробки та тестування застосунку.
 
-Запуск:
+1. Створи файл конфігурації на основі шаблону:
+
+```bash
+cp .env.sandbox.example .env.sandbox
+```
+
+2. Відредагуй `.env.sandbox`:
+   - Встанови власний пароль PostgreSQL.
+   - Згенеруй випадковий `JWT_SECRET_KEY`.
+   - Переконайся, що пароль у `DATABASE_URL` відповідає `POSTGRES_PASSWORD`.
+
+3. Запусти середовище:
 
 ```bash
 docker compose -p synclone-sandbox \
@@ -92,26 +111,37 @@ docker compose -p synclone-sandbox \
 ```
 
 API документація:
+
 http://localhost:8000/docs
 
-PostgreSQL доступний на порту 5433.
+PostgreSQL доступний на порту `5433`.
 
-Зупинка:
+Для зупинки:
 
 ```bash
 docker compose -p synclone-sandbox \
   -f docker-compose.yml down
 ```
 
+Для запуску Frontend дивись розділ «Запуск застосунку».
+
 ### Production
 
-Створи `.env.production` на основі
-`.env.production.example`.
+Production — робоче середовище застосунку.
 
-Перед запуском встанови власний надійний пароль PostgreSQL
-у змінних POSTGRES_PASSWORD та DATABASE_URL.
+1. Створи файл конфігурації на основі шаблону:
 
-Запуск:
+```bash
+cp .env.production.example .env.production
+```
+
+2. Відредагуй `.env.production`:
+   - Встанови власний надійний пароль PostgreSQL.
+   - Згенеруй унікальний `JWT_SECRET_KEY`, відмінний від Sandbox.
+   - Переконайся, що пароль у `DATABASE_URL` відповідає `POSTGRES_PASSWORD`.
+   - Встанови `DEBUG=false`.
+
+3. Запусти Production:
 
 ```bash
 docker compose -p synclone-production \
@@ -119,16 +149,19 @@ docker compose -p synclone-production \
 ```
 
 API:
+
 http://localhost:8001/
 
 Swagger та ReDoc у Production вимкнені.
 
-Зупинка:
+Для зупинки:
 
 ```bash
 docker compose -p synclone-production \
   -f docker-compose.production.yml down
 ```
+
+Для підключення Frontend до Production API використовуй `VITE_API_URL=http://localhost:8001`.
 
 ### Безпека
 

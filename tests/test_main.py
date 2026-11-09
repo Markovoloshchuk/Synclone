@@ -5,6 +5,7 @@ from app.core.config import Settings
 from app.core.security import hash_password, verify_password
 
 TEST_DATABASE_URL = "postgresql+asyncpg://test:test@localhost:5432/test_db"
+TEST_JWT_SECRET_KEY = "test-only-secret-key-for-unit-tests"
 
 
 def test_password_hash_is_not_plaintext():
@@ -25,6 +26,7 @@ def test_sandbox_allows_debug():
         _env_file=None,
         APP_ENV="sandbox",
         DATABASE_URL=TEST_DATABASE_URL,
+        JWT_SECRET_KEY=TEST_JWT_SECRET_KEY,
         DEBUG=True,
     )
 
@@ -38,6 +40,7 @@ def test_production_rejects_debug():
             _env_file=None,
             APP_ENV="production",
             DATABASE_URL=TEST_DATABASE_URL,
+            JWT_SECRET_KEY=TEST_JWT_SECRET_KEY,
             DEBUG=True,
         )
 
@@ -47,6 +50,7 @@ def test_production_allows_debug_disabled():
         _env_file=None,
         APP_ENV="production",
         DATABASE_URL=TEST_DATABASE_URL,
+        JWT_SECRET_KEY=TEST_JWT_SECRET_KEY,
         DEBUG=False,
     )
 
