@@ -21,11 +21,31 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     JWT_SECRET_KEY: str
     JWT_EXPIRE_MINUTES: int = 60
+    CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
+
+    # Початковий адміністратор створюється одноразово окремим bootstrap-кроком.
+    INITIAL_ADMIN_EMAIL: str | None = None
+    INITIAL_ADMIN_PASSWORD: str | None = None
+    INITIAL_ADMIN_NAME: str | None = None
 
     @model_validator(mode="after")
-    def validate_production_settings(self):
+    def validate_runtime_settings(self):
         if self.APP_ENV == "production" and self.DEBUG:
             raise ValueError("DEBUG must be False in Production environment")
+
+        admin_values = (
+            self.INITIAL_ADMIN_EMAIL,
+            self.INITIAL_ADMIN_PASSWORD,
+            self.INITIAL_ADMIN_NAME,
+        )
+        if any(admin_values) and not all(admin_values):
+            raise ValueError(
+                "INITIAL_ADMIN_EMAIL, INITIAL_ADMIN_PASSWORD and "
+                "INITIAL_ADMIN_NAME must be set together"
+            )
+        if self.INITIAL_ADMIN_PASSWORD and len(self.INITIAL_ADMIN_PASSWORD) < 8:
+            raise ValueError("INITIAL_ADMIN_PASSWORD must be at least 8 characters")
+
         return self
 
 
