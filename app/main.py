@@ -46,9 +46,6 @@ async def internal_server_error_handler(
     )
 
 
-app.include_router(clone_router)
-
-
 @app.get("/")
 async def root():
     return {
