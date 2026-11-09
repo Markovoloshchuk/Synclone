@@ -8,3 +8,5 @@ python-jose[cryptography]==3.4.0
 pwdlib[argon2]==0.2.1
 email-validator==2.2.0
 python-dotenv==1.0.1
+passlib[bcrypt]
+python-jose

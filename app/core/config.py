@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str
     JWT_EXPIRE_MINUTES: int = 60
 
+    # --- Додаємо ці поля, і Pydantic сам візьме їх із .env файлу ---
+    INITIAL_ADMIN_EMAIL: str
+    INITIAL_ADMIN_PASSWORD: str
+    INITIAL_ADMIN_NAME: str
+    # -------------------------------------------------------------
+
     @model_validator(mode="after")
     def validate_production_settings(self):
         if self.APP_ENV == "production" and self.DEBUG:

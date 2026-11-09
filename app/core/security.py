@@ -1,33 +1,29 @@
+# app/core/security.py
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 from jose import jwt
-from pwdlib import PasswordHash
 
 from app.core.config import settings
 
-password_hash = PasswordHash.recommended()
-ALGORITHM = "HS256"
 
-
-def hash_password(password: str) -> str:
-    return password_hash.hash(password)
-
-
-def verify_password(password: str, hashed: str) -> bool:
-    try:
-        return password_hash.verify(password, hashed)
-    except Exception:
-        return False
-
-
-def create_access_token(subject: str) -> str:
-    expires = datetime.now(timezone.utc) + timedelta(
-        minutes=settings.JWT_EXPIRE_MINUTES
-    )
-    return jwt.encode(
-        {"sub": subject, "exp": expires}, settings.JWT_SECRET_KEY, algorithm=ALGORITHM
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(
+        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
     )
 
 
-def decode_access_token(token: str) -> dict:
-    return jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[ALGORITHM])
+def get_password_hash(password: str) -> str:
+    # Bcrypt має апаратне обмеження у 72 байти, тому обрізаємо за потреби
+    password_bytes = password.encode("utf-8")[:72]
+    hashed = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+    return hashed.decode("utf-8")
+
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + (
+        expires_delta or timedelta(minutes=settings.JWT_EXPIRE_MINUTES)
+    )
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm="HS256")
