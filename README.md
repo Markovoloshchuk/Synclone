@@ -10,17 +10,35 @@
 - Адміністратор переглядає користувачів, змінює ролі та активність.
 - Користувач бачить і створює лише власні записи резервних копій.
 - Окремий React frontend: `http://localhost:5173`.
-- Swagger: `http://localhost:8000/docs`.
+- Swagger у Sandbox: `http://localhost:8000/docs`.
 
 > Поточна реалізація зберігає метадані й хеш, а не сам файл/вміст резервної копії. Статус `synced` означає, що запис прийнято API, а не те, що вміст перевірено або відновлено.
 
-## Запуск застосунку
+## Запуск
 
-Backend та PostgreSQL запускаються через Docker Compose. Інструкції для тестового та робочого середовищ наведені нижче в розділі «Розділення середовищ».
+Backend та PostgreSQL запускаються через Docker Compose. Перед запуском API окремий одноразовий сервіс `migrate` застосовує Alembic-міграції, а потім за потреби створює початкового адміністратора. API не стартує, якщо міграції завершилися помилкою.
 
-Frontend запускається окремо, оскільки він не входить до поточних Docker Compose конфігурацій.
+### Sandbox
 
-Після запуску Backend відкрий новий термінал:
+1. Створи локальний конфігураційний файл:
+
+```bash
+cp .env.sandbox.example .env.sandbox
+```
+
+2. Відредагуй `.env.sandbox`: встанови власні `POSTGRES_PASSWORD`, `DATABASE_URL` з тим самим паролем і випадковий `JWT_SECRET_KEY` (наприклад, `openssl rand -hex 32`).
+
+3. За потреби налаштуй початкового адміністратора: розкоментуй і заповни всі три змінні `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD` (мінімум 8 символів) і `INITIAL_ADMIN_NAME`. Цей обліковий запис створюється лише якщо email ще не існує; наявні облікові записи bootstrap не змінює.
+
+4. Запусти:
+
+```bash
+docker compose -p synclone-sandbox -f docker-compose.yml up --build -d
+```
+
+API: `http://localhost:8000`; Swagger: `http://localhost:8000/docs`; PostgreSQL host port: `5433`.
+
+Frontend запускається окремо:
 
 ```bash
 cd frontend
@@ -28,33 +46,57 @@ npm install
 npm run dev
 ```
 
-Frontend буде доступний за адресою:
+Frontend: `http://localhost:5173`. Дозволені frontend origins налаштовуються через `CORS_ORIGINS` у відповідному env-файлі.
 
-http://localhost:5173
+### Production
 
-За замовчуванням Frontend підключається до Sandbox API:
-
-http://localhost:8000
-
-Для підключення до Production API використовуй змінну `VITE_API_URL` зі значенням `http://localhost:8001` під час запуску або збірки Frontend.
-
-Для генерації секретного ключа JWT у Linux/macOS використовуй:
+1. Створи конфігурацію:
 
 ```bash
-openssl rand -hex 32
+cp .env.production.example .env.production
 ```
 
-### Важливо про зміну пароля PostgreSQL
+2. Встанови унікальні production-значення для пароля PostgreSQL, `DATABASE_URL`, `JWT_SECRET_KEY`, `CORS_ORIGINS` (точний HTTPS origin frontend) та `DEBUG=false`. Не використовуй секрети Sandbox у Production.
 
-Якщо раніше вже створювався Docker volume `postgres_data`, зміна змінних `POSTGRES_*` не змінює пароль у вже ініціалізованій БД. Для локального тестового середовища, якщо дані не потрібні, можна видалити volume командою `docker compose down -v`, після чого `docker compose up --build`. Увага: `down -v` видаляє дані БД.
+3. За потреби налаштуй початкового адміністратора тими самими трьома `INITIAL_ADMIN_*` змінними.
 
-## Запуск backend локально
-
-Потрібен Python 3.11+ і доступний PostgreSQL. Створи віртуальне середовище, встанови `requirements.txt`, налаштуй `.env`, потім:
+4. Запусти:
 
 ```bash
-uvicorn app.main:app --reload
+docker compose -p synclone-production -f docker-compose.production.yml up --build -d
 ```
+
+API: `http://localhost:8001`. Swagger та ReDoc у Production вимкнені.
+
+### Керування середовищами
+
+Зупинити Sandbox:
+
+```bash
+docker compose -p synclone-sandbox -f docker-compose.yml down
+```
+
+Зупинити Production:
+
+```bash
+docker compose -p synclone-production -f docker-compose.production.yml down
+```
+
+Команда `down` без `-v` зберігає томи PostgreSQL. Не використовуй `down -v`, якщо потрібно зберегти дані.
+
+## Міграції бази даних
+
+Схема БД версіонується через Alembic. Нова міграція додається до `alembic/versions/` і застосовується командою:
+
+```bash
+docker compose -p synclone-sandbox -f docker-compose.yml run --rm migrate
+```
+
+У штатному запуску Compose сервіс `migrate` виконує `alembic upgrade head` перед запуском API. Це працює окремо для Sandbox та Production, кожне зі своєю БД.
+
+Початкова міграція створює відсутні таблиці та індекси `users` і `clone_backups`, але не видаляє наявні таблиці або записи. Вона також дозволяє підхопити локальні бази, у яких таблиці раніше створювалися вручну через SQLAlchemy. Подальші зміни схеми потрібно оформлювати окремими Alembic-міграціями; не додавай `create_all` у startup застосунку.
+
+Для локального запуску backend без Docker після встановлення залежностей і налаштування env-файлу спочатку виконай `alembic upgrade head`, а потім `uvicorn app.main:app --reload`.
 
 ## API
 
@@ -74,116 +116,9 @@ uvicorn app.main:app --reload
 
 - Паролі зберігаються як Argon2-хеші, не у відкритому вигляді.
 - Токени — JWT із часом завершення дії. Поточна версія зберігає токен у `localStorage` для простоти навчального SPA; для production краще розглянути HttpOnly Secure cookies, CSRF-захист, ротацію/відкликання сесій і HTTPS.
-- Таблиці створюються на старті через `Base.metadata.create_all` для простоти навчального проєкту. Для production слід додати Alembic-міграції.
-- Потрібно налаштувати rate limiting для входу/реєстрації, політику паролів, аудит дій адміністратора, резервування БД і повноцінні інтеграційні тести перед production.
-- Frontend очікує API на `http://localhost:8000`; для іншого розміщення задай `VITE_API_URL` під час збірки frontend.
-
-## Розділення середовищ
-
-Проєкт підтримує два незалежних середовища:
-
-- Sandbox — середовище для розробки та тестування.
-- Production — робоче середовище.
-
-Для кожного середовища використовується окремий файл конфігурації
-та окрема база даних PostgreSQL.
-
-### Sandbox
-
-Sandbox використовується для розробки та тестування застосунку.
-
-1. Створи файл конфігурації на основі шаблону:
-
-```bash
-cp .env.sandbox.example .env.sandbox
-```
-
-2. Відредагуй `.env.sandbox`:
-   - Встанови власний пароль PostgreSQL.
-   - Згенеруй випадковий `JWT_SECRET_KEY`.
-   - Переконайся, що пароль у `DATABASE_URL` відповідає `POSTGRES_PASSWORD`.
-
-3. Запусти середовище:
-
-```bash
-docker compose -p synclone-sandbox \
-  -f docker-compose.yml up --build
-```
-
-API документація:
-
-http://localhost:8000/docs
-
-PostgreSQL доступний на порту `5433`.
-
-Для зупинки:
-
-```bash
-docker compose -p synclone-sandbox \
-  -f docker-compose.yml down
-```
-
-Для запуску Frontend дивись розділ «Запуск застосунку».
-
-### Production
-
-Production — робоче середовище застосунку.
-
-1. Створи файл конфігурації на основі шаблону:
-
-```bash
-cp .env.production.example .env.production
-```
-
-2. Відредагуй `.env.production`:
-   - Встанови власний надійний пароль PostgreSQL.
-   - Згенеруй унікальний `JWT_SECRET_KEY`, відмінний від Sandbox.
-   - Переконайся, що пароль у `DATABASE_URL` відповідає `POSTGRES_PASSWORD`.
-   - Встанови `DEBUG=false`.
-
-3. Запусти Production:
-
-```bash
-docker compose -p synclone-production \
-  -f docker-compose.production.yml up --build -d
-```
-
-API:
-
-http://localhost:8001/
-
-Swagger та ReDoc у Production вимкнені.
-
-Для зупинки:
-
-```bash
-docker compose -p synclone-production \
-  -f docker-compose.production.yml down
-```
-
-Для підключення Frontend до Production API використовуй `VITE_API_URL=http://localhost:8001`.
-
-### Безпека
-
-- Паролі не зберігаються у вихідному коді.
-- Файли `.env.sandbox` та `.env.production`
-  не додаються до Git.
-- У Production DEBUG=False.
-- Внутрішні помилки сервера не розкриваються користувачу.
-- Production та Sandbox мають незалежні бази даних
-  і Docker volumes.
+- CORS origins задаються явно через `CORS_ORIGINS`; не використовуй wildcard для production.
+- Перед production потрібні rate limiting для входу/реєстрації, аудит дій адміністратора, резервування БД і повноцінні інтеграційні тести.
 
 ## CI/CD
 
-У проєкті використовується GitHub Actions.
-
-Workflow знаходиться в `.github/workflows/ci.yml`.
-
-Він запускається автоматично при:
-- Push у гілку main.
-- Створенні Pull Request у main.
-
-Під час виконання перевіряється:
-- Якість коду за допомогою Ruff.
-- Форматування за допомогою Black.
-- Коректність роботи тестів за допомогою pytest.
+GitHub Actions запускає Ruff, Black та pytest при push і pull request у `main`.
