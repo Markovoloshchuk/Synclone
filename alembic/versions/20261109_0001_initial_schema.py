@@ -31,13 +31,12 @@ def upgrade() -> None:
             sa.Column("is_active", sa.Boolean(), nullable=False),
             sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
             sa.PrimaryKeyConstraint("id"),
-            sa.UniqueConstraint("email"),
         )
 
     inspector = inspect(bind)
     indexes = {index["name"] for index in inspector.get_indexes("users")}
     if "ix_users_email" not in indexes:
-        op.create_index("ix_users_email", "users", ["email"], unique=False)
+        op.create_index("ix_users_email", "users", ["email"], unique=True)
 
     inspector = inspect(bind)
     tables = set(inspector.get_table_names())
