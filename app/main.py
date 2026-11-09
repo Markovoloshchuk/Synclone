@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.v1.admin import router as admin_router
@@ -21,6 +22,19 @@ app = FastAPI(
     docs_url="/docs" if is_sandbox else None,
     redoc_url="/redoc" if is_sandbox else None,
     openapi_url="/openapi.json" if is_sandbox else None,
+)
+
+cors_origins = [
+    origin.strip().rstrip("/")
+    for origin in settings.CORS_ORIGINS.split(",")
+    if origin.strip()
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 app.include_router(auth_router)
