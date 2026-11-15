@@ -1,61 +1,41 @@
-# =========================================
-# Python & Bytecode
-# =========================================
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-
-# =========================================
-# Віртуальні середовища
-# =========================================
-venv/
-.venv/
-env/
-ENV/
-
-# =========================================
-# Змінні середовища та секрети
-# =========================================
+# Environment variables and secrets
+.env*
 .env
-.env.*
 
-!.env.example
-!.env.sandbox.example
-!.env.production.example
+# Git
+.git
+.gitignore
 
-# =========================================
-# Інструменти перевірки коду та тести
-# =========================================
-.pytest_cache/
-.mypy_data/
-.ruff_cache/
-.cache/
+# Python virtual environments
+.venv
+venv
+__pycache__
+*.pyc
+
+# Python testing and linting cache
+.pytest_cache
+.ruff_cache
 .coverage
-htmlcov/
+htmlcov
 
-# =========================================
-# IDE та редактори кодів (VS Code, PyCharm)
-# =========================================
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Application logs
+*.log
+**/*.log
+logs/
 
-# =========================================
-# Операційна система
-# =========================================
+# Frontend dependencies and build artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Frontend package manager logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+# Operating system files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
+**/.DS_Store
 Thumbs.db
-ehthumbs.db
-
-# =========================================
-# Docker та локальні дані БД
-# =========================================
-postgres_data/
+**/Thumbs.db
