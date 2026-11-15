@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -7,8 +8,33 @@ from app.api.v1.admin import router as admin_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.endpoints import router as clone_router
 from app.core.config import settings
+from app.core.database import engine, init_db
 
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Manage application startup and shutdown.
+
+    On startup:
+        Initialize the database and create missing tables.
+
+    On shutdown:
+        Dispose the SQLAlchemy engine.
+    """
+
+    try:
+        await init_db()
+        logger.info("Database initialized successfully")
+
+        yield
+
+    finally:
+        await engine.dispose()
+        logger.info("Database connections closed")
+
 
 # Документація доступна лише в Sandbox.
 is_sandbox = settings.APP_ENV == "sandbox"
@@ -21,6 +47,7 @@ app = FastAPI(
     docs_url="/docs" if is_sandbox else None,
     redoc_url="/redoc" if is_sandbox else None,
     openapi_url="/openapi.json" if is_sandbox else None,
+    lifespan=lifespan,
 )
 
 app.include_router(auth_router)
