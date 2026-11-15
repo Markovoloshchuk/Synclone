@@ -44,3 +44,6 @@ async def change_active(user_id: int, is_active: bool, admin: AdminUser, db: DbS
     await db.commit()
     await db.refresh(user)
     return user
+
+
+# Test baseline update
