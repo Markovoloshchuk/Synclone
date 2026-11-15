@@ -1,3 +1,4 @@
+
 # Environment variables and secrets
 .env*
 .env
@@ -7,18 +8,18 @@
 .gitignore
 
 # Python virtual environments
-.venv
-venv
-__pycache__
+.venv/
+venv/
+__pycache__/
 *.pyc
 
 # Python testing and linting cache
-.pytest_cache
-.ruff_cache
+.pytest_cache/
+.ruff_cache/
 .coverage
-htmlcov
+htmlcov/
 
-# Application and client logs
+# Application logs
 *.log
 **/*.log
 logs/
@@ -26,6 +27,7 @@ logs/
 # Frontend dependencies and build artifacts
 frontend/node_modules/
 frontend/dist/
+frontend/build/
 frontend/.vite/
 
 # Frontend package manager logs
@@ -33,6 +35,10 @@ frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
 frontend/pnpm-debug.log*
+
+# IDE settings
+.vscode/
+.idea/
 
 # Operating system files
 .DS_Store

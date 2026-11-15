@@ -3,9 +3,7 @@
 .env
 .env.*
 !.env.example
-
-# Git
-.git
+!.env.*.example
 
 # Python virtual environments
 .venv/
@@ -30,7 +28,7 @@ dist/
 .coverage.*
 htmlcov/
 
-# Type checking and linting
+# Type checking
 .mypy_cache/
 .dmypy.json
 .pyre/
@@ -54,7 +52,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Environment and tool caches
+# Tool caches
 .cache/
 .temp/
 .tmp/
