@@ -1,11 +1,41 @@
+# Environment variables and secrets
 .env*
+.env
+
+# Git
 .git
 .gitignore
+
+# Python virtual environments
 .venv
 venv
 __pycache__
 *.pyc
+
+# Python testing and linting cache
 .pytest_cache
 .ruff_cache
 .coverage
 htmlcov
+
+# Application and client logs
+*.log
+**/*.log
+logs/
+
+# Frontend dependencies and build artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Frontend package manager logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+# Operating system files
+.DS_Store
+**/.DS_Store
+Thumbs.db
+**/Thumbs.db
