@@ -23,6 +23,10 @@ jobs:
       JWT_SECRET_KEY: ci-only-secret-not-for-production
       JWT_EXPIRE_MINUTES: "60"
 
+      INITIAL_ADMIN_EMAIL: ci-admin@example.test
+      INITIAL_ADMIN_PASSWORD: ci-only-password-not-for-production
+      INITIAL_ADMIN_NAME: CI Test Administrator
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
