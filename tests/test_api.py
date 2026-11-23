@@ -32,9 +32,16 @@ app.dependency_overrides[get_db] = override_get_db
 async def setup_database():
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    yield
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+
+    try:
+        yield
+    finally:
+        try:
+            async with test_engine.begin() as conn:
+                await conn.run_sync(Base.metadata.drop_all)
+        finally:
+            # Закриваємо з'єднання SQLite після кожного тесту
+            await test_engine.dispose()
 
 
 @pytest.fixture
