@@ -3,4 +3,4 @@
 
 black==26.10.1
 ruff==0.3.5
-pytest==8.0.2
+pytest==9.2.0
